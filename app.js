@@ -1,32 +1,33 @@
 const feathers = require('@feathersjs/feathers');
-const { BadRequest } = require('@feathersjs/errors');
+const express = require('@feathersjs/express');
 
 class Messages {
-
-    constructor(){
+    constructor() {
         this.messages = [];
         this.currentId = 0;
     }
 
-    async find(params){
-        // return list of parameters
+    async find(params) {
+        // Return the list of all messages
         return this.messages;
     }
 
-    async get(id, params){
-        // find message by id
-        const message = this.messages.find(
-            message => message.id === parseInt(id, 10)
-        );
+    async get(id, params) {
+        // Find the message by id
+        const message = this.messages.find(message => message.id === parseInt(id, 10));
 
-        if(!message){
-            throw new Error(`Message with id ${id} not found`)
+        // Throw an error if it wasn't found
+        if(!message) {
+            throw new Error(`Message with id ${id} not found`);
         }
 
+        // Otherwise return the message
         return message;
     }
 
-    async create(data, params){
+    async create(data, params) {
+        // Create a new object with the original data and an id
+        // taken from the incrementing `currentId` counter
         const message = Object.assign({
             id: ++this.currentId
         }, data);
@@ -36,92 +37,51 @@ class Messages {
         return message;
     }
 
-    async patch(id, data, params){
+    async patch(id, data, params) {
+        // Get the existing message. Will throw an error if not found
         const message = await this.get(id);
 
+        // Merge the existing message with the new data
+        // and return the result
         return Object.assign(message, data);
     }
 
-    async remove(id, params){
+    async remove(id, params) {
+        // Get the message by id (will throw an error if not found)
         const message = await this.get(id);
-
+        // Find the index of the message in our message array
         const index = this.messages.indexOf(message);
 
-        this.messages.slice(index, 1);
+        // Remove the found message from our array
+        this.messages.splice(index, 1);
 
+        // Return the removed message
         return message;
     }
-};
-
-const app = feathers();
-
-app.use('messages', new Messages());
-
-// hooks
-const setTimeStamp = name => {
-  return async context => {
-      context.data[name] = new Date();
-
-      return context;
-  }
-};
-
-const validate = async context => {
-  const { data} = context;
-
-  if(!data.text){
-      throw new BadRequest('Message text must exist');
-  }
-
-  if(typeof data.text !== 'string' || data.text.trim() === ''){
-      throw new BadRequest('Message text is invalid');
-  }
-
-  // change data to only text, removing all the other props
-  context.data = {
-    text: data.text.toString()
-  };
-
-  return context;
-};
-
-app.hooks({
-    error: async context => {
-        console.error(`Error in '${context.path}' service method '${context.method}'`, context.error.stack);
-    }
-});
-
-// testing
-async function processMessages(){
-
-    app.service('messages').on('created', message => {
-        console.log('Created a new message: ', message);
-    });
-
-    app.service('messages').on('removed', message => {
-        console.log('Deleted message: ', message);
-    });
-
-    app.service('messages').hooks({
-        before: {
-            create: [setTimeStamp('createdAt'), validate],
-            update: [setTimeStamp('updatedAt'), validate],
-        }
-    });
-
-    await app.service('messages').create({
-       text: 'First message'
-    });
-
-    const lastMessage = await app.service('messages').create({
-        text: 'Second message'
-    });
-
-    await app.service('messages').remove(lastMessage.id);
-
-    const messageList = await app.service('messages').find();
-
-    console.log('Available messages: ', messageList);
 }
 
-processMessages();
+const app = express(feathers());
+
+// Turn on JSON body parsing for REST services
+app.use(express.json())
+// Turn on URL-encoded body parsing for REST services
+app.use(express.urlencoded({ extended: true }));
+// Set up REST transport using Express
+app.configure(express.rest());
+
+// Initialize the messages service by creating
+// a new instance of our class
+app.use('messages', new Messages());
+
+// Set up an error handler that gives us nicer errors
+app.use(express.errorHandler());
+
+// Start the server on port 3030
+const server = app.listen(3030);
+
+// Use the service to create a new message on the server
+app.service('messages').create({
+    text: 'Hello from the server'
+});
+
+server.on('listening', () => console.log('Feathers REST API started at localhost:3030'));
