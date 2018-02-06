@@ -12,5 +12,6 @@
     <orderEntry type="library" name="@types/feathersjs__express" level="application" />
     <orderEntry type="library" name="@types/feathersjs__feathers" level="application" />
     <orderEntry type="library" name="@types/feathersjs__configuration" level="application" />
+    <orderEntry type="library" name="@types/node" level="application" />
   </component>
 </module>

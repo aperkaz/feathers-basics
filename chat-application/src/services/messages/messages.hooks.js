@@ -1,5 +1,5 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
-const { processMessage } = require('../../hooks/process-message');
+const processMessage = require('../../hooks/process-message');
 
 module.exports = {
   before: {
