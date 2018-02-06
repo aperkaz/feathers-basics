@@ -4,6 +4,12 @@
 
 > Build incredible apps in record time. [Feathers.js team] 
 
+## Apps
+
+Available apps:
+
+-  `./chat-application`: real time chat application with authentication, RESTful and reat-time API.
+
 
 
 ## License
