@@ -1,20 +1,22 @@
+// Create a Feathers application
 const app = feathers();
+// Initialize a REST connection
+const rest = feathers.rest('http://localhost:3030');
+// Configure the REST client by using `window.fetch`
+app.configure(rest.fetch(window.fetch));
 
-app.use('todos', {
-   async get(name){
-       // return object
-       return {
-         name,
-         text: `You have to ${name}`
-       };
-   }
+app.service('messages').on('created', message => {
+    console.log('Created a new message locally', message);
 });
 
-// a function that gets and logs the todos from the service
-async function logTodo(name) {
-    const service = app.service('todos');
-    const todo = await service.get(name);
-    console.log(todo);
-};
+async function createAndList() {
+    await app.service('messages').create({
+        text: 'Hello from Feathers browser client'
+    });
 
-logTodo('browserTest');
+    const messages = await app.service('messages').find();
+
+    console.log('Messages', messages);
+}
+
+createAndList();
